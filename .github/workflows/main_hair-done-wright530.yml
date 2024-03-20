@@ -11,7 +11,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -26,15 +26,12 @@ jobs:
           npm install
           npm run build --if-present
           npm run test --if-present
-
-      - name: Zip artifact for deployment
-        run: zip release.zip ./* -r
-
+      
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v3
         with:
           name: node-app
-          path: release.zip
+          path: .
 
   deploy:
     runs-on: ubuntu-latest
@@ -50,20 +47,17 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: node-app
-
-      - name: Unzip artifact for deployment
-        run: unzip release.zip
       
       - name: Login to Azure
         uses: azure/login@v1
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_3C50957ACA4F4665BDE5E31C3ED6F76E }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_19DBC1C87FEC4007AE44F06D33B7D482 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_915FDEC982524A938BC2B2C4A7149DA0 }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_ECB2B61FECC1451BBA55EDB694F34383 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_3DFA0219FB864AA3BD56BBDA0A42DA75 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_01709EA3B16D4FAD8D66E7DC54A282B6 }}
 
       - name: 'Deploy to Azure Web App'
-        id: deploy-to-webapp
         uses: azure/webapps-deploy@v2
+        id: deploy-to-webapp
         with:
           app-name: 'hair-done-Wright530'
           slot-name: 'Production'
