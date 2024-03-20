@@ -1,95 +1,27 @@
 const sql = require('mssql')
 const express = require('express')
 const cors = require('cors');
+const { config } = require('dotenv');
+
+config({ path: '../.env'}); //load environment variables from .env file
+/*process.env.TEST_VARIABLE = 'test value';
+console.log('TEST_VARIABLE:', process.env.TEST_VARIABLE);
+console.log('Environment variables loaded from .env file');
+console.log('DB_SERVER:', process.env.DB_SERVER);
+console.log('DB_USER:', process.env.DB_USER);
+console.log('DB_PASSWORD:', process.env.DB_PASSWORD);
+console.log('DB_NAME:', process.env.DB_NAME);
+console.log('DB_PORT:', process.env.DB_PORT);
+console.log('all environment variables', process.env);*/ //for testing environment variables
+
 const app = express();
 app.use(cors());
 app.use(express.json()); //middleware to parse JSON request bodies
 
-//Wanted to have these through exports, but exports do not seem to be working, will fix later.
-const monthsNum = {
-    January: '01',
-    February: '02',
-    March: '03',
-    April: '04',
-    May: '05',
-    June: '06',
-    July: '07',
-    August: '08',
-    September: '09',
-    October: '10',
-    November: '11',
-    December: '12'
-}
-
-const monthsWritten = {
-    January: 'January',
-    February: 'February',
-    March: 'March',
-    April: 'April',
-    May: 'May',
-    June: 'June',
-    July: 'July',
-    August: 'August',
-    September: 'September',
-    October: 'October',
-    November: 'November',
-    December: 'December'
-}
-/**
- * This is config, it creates an object that stores log information in order to connect to the server.
- * This will be passed on to connect, and if it is valid it will return an object.
- */
-const config = {
-    user: 'hdw530', // better stored in an app setting such as process.env.DB_USER
-    password: '#RecyclingTeam', // better stored in an app setting such as process.env.DB_PASSWORD
-    server: 'hair-done-wright530.database.windows.net', // better stored in an app setting such as process.env.DB_SERVER
-    port: 1433, // optional, defaults to 1433, better stored in an app setting such as process.env.DB_PORT
-    database: 'mobile_app', // better stored in an app setting such as process.env.DB_NAME
-    authentication: {
-        type: 'default'
-    },
-    options: {
-        encrypt: true
-    }
-}
-
-/**
- * 
- * This function is a template function that shows the basics of connecting and running through the columns/rows.
- */
-async function connectAndQuery() {
-    try {
-        console.log(config.user);
-        var poolConnection = await sql.connect(config);
-        console.log("Reading rows from the Table...");
-        var resultSet = await poolConnection.request().query(`
-        SELECT *
-        FROM Clients;`);
-
-        console.log(`${resultSet.recordset.length} rows returned.`);
-
-        // output column headers
-        var columns = "";
-        for (var column in resultSet.recordset.columns) {
-            columns += column + ", ";
-        }
-        console.log("%s\t", columns.substring(0, columns.length - 2));
-        let ret = [];
-        let i = 0;
-        // ouput row contents from default record set
-        resultSet.recordset.forEach(client => {
-            console.log("%s\t%s", client.PhoneNumberEmail, client.FirstName, client.MiddleName, client.LastName, client.PreferredWayOfContact);
-            ret[i] = client.PhoneNumberEmail + ' ' + client.FirstName + ' ' + client.MiddleName + ' ' + client.LastName + ' ' +client.PreferredWayOfContact +'\n' ;
-            console.log(ret[i]);
-            i += 1;
-        });
-
-        // close connection only when we're certain application is finished
-        poolConnection.close();
-        return ret;
-    } catch (err) {
-        console.error(err.message);
-    }
+//check for required environment variables
+if (!process.env.DB_SERVER || !process.env.DB_USER || !process.env.DB_PASSWORD || !process.env.DB_NAME || !process.env.DB_PORT ) {
+    console.error('Missing environment variables. Please check .env file');
+    process.exit(1);
 }
 
 /**
@@ -99,12 +31,31 @@ async function connectAndQuery() {
  */
 async function connect(){
     try {
-        var poolConnection = await sql.connect(config);
-        return poolConnection;
-    }catch(err){
-        console.error(err.message);
+        const dbPort = process.env.DB_PORT || '1433';
+        const config = {
+            user: process.env.DB_USER,
+            password: process.env.DB_PASSWORD,
+            server: process.env.DB_SERVER,
+            port: parseInt(dbPort),
+            database: process.env.DB_NAME,
+            authentication: {
+                type: 'default',
+            },
+            options: {
+                  encrypt: true
+             }
+        };
+        const pool = await sql.connect(config);
+        console.log("Connected to database");
+        return pool;
+    } catch (err) {
+        console.error('Not connected to database', err.message);
+        throw err;
     }
 }
+
+//connect(); //for testing connection
+module.exports = { app, connect }; //export app and connect in case of future modularization
 
 /**
  * This takes in a result from the queried database, makes them into objects, and puts them in an array to create an array of those objects.
@@ -336,7 +287,7 @@ async function appointmentQuery(startDate, endDate, vacancyStatus){
 }
 
 //adds an admin availability date/time to the database
-async function addAvailability(addDateTimeString, notBooked) {
+async function addAvailability(addDateTimeString, vacancyStatus) {
     try {
         const poolConnection = await connect();
         poolConnection.setMaxListeners(24);
