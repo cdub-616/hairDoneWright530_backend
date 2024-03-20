@@ -62,4 +62,5 @@ jobs:
           app-name: 'hair-done-Wright530'
           slot-name: 'Production'
           package: .
+          startup-command: 'node DatabaseConnection.tsx' # This is the startup command to start the app
           
