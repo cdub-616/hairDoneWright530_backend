@@ -17,8 +17,6 @@ console.log('all environment variables', process.env);*/ //for testing environme
 const app = express();
 app.use(cors());
 app.use(express.json()); //middleware to parse JSON request bodies
-app.usehsts = require('hsts');
-app.usehttpsredirect = require('express-https-redirect');
 
 //check for required environment variables
 if (!process.env.DB_SERVER || !process.env.DB_USER || !process.env.DB_PASSWORD || !process.env.DB_NAME || !process.env.DB_PORT ) {
@@ -55,6 +53,8 @@ async function connect(){
         throw err;
     }
 }
+
+//connect(); //for testing connection
 
 //connect(); //for testing connection
 module.exports = { app, connect }; //export app and connect in case of future modularization
