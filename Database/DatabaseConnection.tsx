@@ -54,7 +54,7 @@ async function connect(){
     }
 }
 
-//connect(); //for testing connection
+connect(); //for testing connection
 
 //connect(); //for testing connection
 module.exports = { app, connect }; //export app and connect in case of future modularization
