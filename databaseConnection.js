@@ -1,28 +1,20 @@
 const sql = require('mssql')
 const express = require('express')
 const cors = require('cors');
-const { config } = require('dotenv');
-
-config({ path: '../.env'}); //load environment variables from .env file
-/*process.env.TEST_VARIABLE = 'test value';
-console.log('TEST_VARIABLE:', process.env.TEST_VARIABLE);
-console.log('Environment variables loaded from .env file');
-console.log('DB_SERVER:', process.env.DB_SERVER);
-console.log('DB_USER:', process.env.DB_USER);
-console.log('DB_PASSWORD:', process.env.DB_PASSWORD);
-console.log('DB_NAME:', process.env.DB_NAME);
-console.log('DB_PORT:', process.env.DB_PORT);
-console.log('all environment variables', process.env);*/ //for testing environment variables
+require('dotenv').config(); //load environment variables from .env file
+const { config } = require('./config');
 
 const app = express();
 app.use(cors());
 app.use(express.json()); //middleware to parse JSON request bodies
 
-//check for required environment variables
-if (!process.env.DB_SERVER || !process.env.DB_USER || !process.env.DB_PASSWORD || !process.env.DB_NAME || !process.env.DB_PORT ) {
-    console.error('Missing environment variables. Please check .env file');
-    process.exit(1);
-}
+//set port for Express server
+const port = process.env.PORT || 3000;
+
+//start server
+app.listen(port, () => {
+    console.log(`Server is up and listening on port ${port}`);
+});
 
 /**
  * This function attempts to connect the database using config.
@@ -31,7 +23,7 @@ if (!process.env.DB_SERVER || !process.env.DB_USER || !process.env.DB_PASSWORD |
  */
 async function connect(){
     try {
-        const dbPort = process.env.DB_PORT || '1433';
+        const dbPort = process.env.DB_PORT || '3000';
         const config = {
             user: process.env.DB_USER,
             password: process.env.DB_PASSWORD,
@@ -49,15 +41,12 @@ async function connect(){
         console.log("Connected to database");
         return pool;
     } catch (err) {
-        console.error('Not connected to database', err.message);
+        console.error('Problem connecting to database', err.message);
         throw err;
     }
-}
+};
 
-//connect(); //for testing connection
-
-//connect(); //for testing connection
-module.exports = { app, connect }; //export app and connect in case of future modularization
+//connect(); //test connection to database
 
 /**
  * This takes in a result from the queried database, makes them into objects, and puts them in an array to create an array of those objects.
@@ -1031,9 +1020,3 @@ app.put('/updateClientApproval', async (req, res) =>{
     }
     
 })
-
-//This opens the server, printing to console 'up' when it is up.
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server is up and listening on port ${PORT}`);
-});
