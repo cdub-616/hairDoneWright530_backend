@@ -1031,9 +1031,3 @@ app.put('/updateClientApproval', async (req, res) =>{
     }
     
 })
-
-//This opens the server, printing to console 'up' when it is up.
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server is up and listening on port ${PORT}`);
-});

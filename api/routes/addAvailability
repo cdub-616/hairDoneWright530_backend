@@ -1,0 +1,38 @@
+const express = require('express');
+const router = express.Router();
+const { connect } = require('mssql');
+const { config } = require('../../config');
+
+//adds an admin availability date/time to the database
+async function addAvailability(addDateTimeString, vacancyStatus) {
+    try {
+        const poolConnection = await connect(config);
+        poolConnection.setMaxListeners(24);
+        const query = `INSERT INTO Appointments (AppointmentDate, VacancyStatus) VALUES ('${addDateTimeString}', ${vacancyStatus});`;
+        await poolConnection.request()
+            .query(query);
+        poolConnection.close();
+    } catch (err) {
+        console.error(err.message);
+        throw err; // rethrow error so it can be caught in calling code
+    }
+}
+
+router.post('/', async (req, res, next) => {
+    try {
+        const { addDateTimeString, vacancyStatus } = req.body;
+        if (!addDateTimeString) {
+            throw new Error('Invalid request body. Missing "addDateTimeString".');
+        }
+        if (vacancyStatus === undefined || vacancyStatus === null) {
+            throw new Error('Invalid request body. Missing "vacancyStatus".');
+        }
+        await addAvailability(addDateTimeString, vacancyStatus);
+        res.status(204).send(); // 204 means success with no content
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+module.exports = router;
