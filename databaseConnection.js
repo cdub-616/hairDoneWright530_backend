@@ -9,7 +9,7 @@ app.use(cors());
 app.use(express.json()); //middleware to parse JSON request bodies
 
 //set port for Express server
-const port = process.env.SERVER_PORT || 80;
+const port = process.env.SERVER_PORT || 8080;
 //const port = 3000; //for local testing
 
 //start server
