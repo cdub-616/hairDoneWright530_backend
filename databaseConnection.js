@@ -254,7 +254,7 @@ app.put('/confirmAppointment', (req, res) => {
 
     updateAppointment(date, time, userID, type)
     .then(res.send("Booked."))
-    .catch(err => {
+    .catch((err) => {
         console.error('Error updating appointments:', err.message);
         res.status(500).send('Internal Server Error');
     });
@@ -383,6 +383,62 @@ async function currentClientsNotesUpdate(userID, clientNotes) {
         const query = `UPDATE CurrentClients
             SET ClientNotes = '${clientNotes}'
             WHERE UserID = ${userID};`;
+        await poolConnection.request().query(query);
+        poolConnection.close();
+    } catch (err) {
+        console.error(err.message);
+    }
+};
+
+app.patch('/updateAppointmentNotes', async (req, res) => {
+    try {
+        const { userID, appointmentDate, appointmentNotes } = req.body;
+        if (!userID) {
+            throw new Error('Invalid request body. Missing "userID"');
+        }
+        await appointmentNotesUpdate(userID, appointmentDate, appointmentNotes);
+        res.status(204).send(); // 204 means success with no content
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+//updates Appointments table with appointment notes
+async function appointmentNotesUpdate(userID, appointmentDate, appointmentNotes) {
+    try {
+        const poolConnection = await connect();
+        const query = `UPDATE Appointments
+            SET AppointmentNotes = '${appointmentNotes}'
+            WHERE UserID = ${userID} AND AppointmentDate = '${appointmentDate}';`;
+        await poolConnection.request().query(query);
+        poolConnection.close();
+    } catch (err) {
+        console.error(err.message);
+    }
+};
+
+app.patch('/removeClientAppointment', async (req, res) => {
+    try {
+        const { appointmentDate, typeOfAppointment, vacancyStatus, appointmentNotes, userID } = req.body;
+        if (!appointmentDate) {
+            throw new Error('Invalid request body. Missing "apppointmentDate"');
+        }
+        await removeClientAppointment(appointmentDate, typeOfAppointment, vacancyStatus, appointmentNotes, userID);
+        res.status(204).send(); // 204 means success with no content
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+//removes client appointment by setting values to original
+async function removeClientAppointment(appointmentDate, typeOfAppointment, vacancyStatus, appointmentNotes, userID) {
+    try {
+        const poolConnection = await connect();
+        const query = `UPDATE Appointments
+            SET UserID = ${userID}, TypeOfAppointment = ${typeOfAppointment}, VacancyStatus = ${vacancyStatus}, AppointmentNotes = ${appointmentNotes}
+            WHERE AppointmentDate = '${appointmentDate}';`;
         await poolConnection.request().query(query);
         poolConnection.close();
     } catch (err) {
@@ -804,7 +860,7 @@ app.get('/selectAppointmentsByTime', async (req, res) => {
 async function clientHistoryAppointmentsQuery(startDate, endDate){
     try {
         const poolConnection = await connect();
-        const query = `SELECT FirstName, LastName, AppointmentDate, TypeOfAppointment 
+        const query = `SELECT FirstName, LastName, AppointmentDate, TypeOfAppointment, Clients.UserID, AppointmentNotes 
             FROM Appointments JOIN Clients ON Appointments.UserID = Clients.UserID 
             WHERE AppointmentDate BETWEEN '${startDate}' AND '${endDate}'`;
         const resultSet = await poolConnection
@@ -998,7 +1054,7 @@ app.get('/allPastAppointmentsQuery', async (req, res) => {
 async function allPastAppointmentsQuery(todaysDate){
     try {
         const poolConnection = await connect();
-        const query = `SELECT FirstName, LastName, AppointmentDate, TypeOfAppointment 
+        const query = `SELECT Appointments.UserID, FirstName, LastName, AppointmentDate, TypeOfAppointment 
             FROM Appointments JOIN Clients ON Appointments.UserID = Clients.UserID 
             WHERE AppointmentDate < '${todaysDate}'`;
         const resultSet = await poolConnection
@@ -1029,7 +1085,7 @@ app.get('/allUpcomingAppointmentsQuery', async (req, res) => {
 async function allUpcomingAppointmentsQuery(todaysDate){
     try {
         const poolConnection = await connect();
-        const query = `SELECT FirstName, LastName, AppointmentDate, TypeOfAppointment 
+        const query = `SELECT Appointments.UserID, FirstName, LastName, AppointmentDate, TypeOfAppointment 
             FROM Appointments JOIN Clients ON Appointments.UserID = Clients.UserID 
             WHERE AppointmentDate >= '${todaysDate}';`;
         const resultSet = await poolConnection
@@ -1406,6 +1462,7 @@ app.get('/queryUpcomingAppointmentsByUserIDAndDate', (req, res) =>{
     const date = req.query.date;
     const userID = req.query.userID;
     const query = "SELECT * FROM Appointments WHERE AppointmentDate >= '" + date + "' AND UserID = " + userID +";";
+    console.log(query);
     customQuery(query)
     .then((ret) => res.send(ret))
     .catch(err => {
@@ -1418,6 +1475,7 @@ app.get('/queryPastAppointmentsByUserIDAndDate', (req, res) =>{
     const date = req.query.date;
     const userID = req.query.userID;
     const query = "SELECT * FROM Appointments WHERE AppointmentDate <= '" + date + "' AND UserID = " + userID +";";
+    console.log(query);
     customQuery(query)
     .then((ret) => res.send(ret))
     .catch(err => {
