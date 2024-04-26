@@ -1054,7 +1054,7 @@ app.get('/allPastAppointmentsQuery', async (req, res) => {
 async function allPastAppointmentsQuery(todaysDate){
     try {
         const poolConnection = await connect();
-        const query = `SELECT Appointments.UserID, FirstName, LastName, AppointmentDate, TypeOfAppointment 
+        const query = `SELECT Appointments.UserID, FirstName, LastName, AppointmentDate, TypeOfAppointment, AppointmentNotes
             FROM Appointments JOIN Clients ON Appointments.UserID = Clients.UserID 
             WHERE AppointmentDate < '${todaysDate}'`;
         const resultSet = await poolConnection
@@ -1085,7 +1085,7 @@ app.get('/allUpcomingAppointmentsQuery', async (req, res) => {
 async function allUpcomingAppointmentsQuery(todaysDate){
     try {
         const poolConnection = await connect();
-        const query = `SELECT Appointments.UserID, FirstName, LastName, AppointmentDate, TypeOfAppointment 
+        const query = `SELECT Appointments.UserID, FirstName, LastName, AppointmentDate, TypeOfAppointment, AppointmentNotes
             FROM Appointments JOIN Clients ON Appointments.UserID = Clients.UserID 
             WHERE AppointmentDate >= '${todaysDate}';`;
         const resultSet = await poolConnection
