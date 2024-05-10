@@ -120,6 +120,31 @@ async function queryUsers(){
     }
 }
 
+app.get('/queryUsers', (req, res) => queryUsers().then((ret) => res.send(ret)).catch(() => console.log('error')))
+
+/**
+ * The general querying for tables are all the same, so I'll comment this one 
+ * @returns Array of Objects created from the querry
+ */
+async function queryUsers(){
+    try {
+        //First tries to connect to the dbs using the connect method, await is important
+        var poolConnection = await connect();
+        //Sends a request using the object given from connect, await is important, type in a query command that you would use in SQL
+        var resultSet = await poolConnection.request().query(`
+        SELECT *
+        FROM Users;`);
+        //Closes the connection
+        poolConnection.close();
+        //Sorts the result into an object array using the method and returns it.
+        return sortingResults(resultSet);
+    } catch (err) {
+        //If any error occurs, it'll throw it over here and print it in console
+        console.error(err.message);
+        throw err;
+    }
+}
+
 app.get('/queryClients', (req, res) => queryClients().then((ret) => res.send(ret)).catch(() => console.log('error')))
 
 async function queryClients(){
@@ -1518,6 +1543,17 @@ app.delete('/deleteNewClientsByUserID', (req, res) =>{
     })
 });
 
+app.delete('/deleteUsersByUserID', (req, res) =>{
+    const userID = req.query.userID;
+    const query = `DELETE FROM Users WHERE UserID = ${userID}`;
+    customQueryNoReturn(query)
+    .then((ret) => res.send(ret))
+    .catch(err => {
+        console.error('Error deleting a new client:', err.message);
+        res.status(500).send('Internal Server Error');
+    })
+});
+
 async function customQueryNoReturn(queryString){
     try {
         const poolConnection = await connect();
@@ -1527,4 +1563,4 @@ async function customQueryNoReturn(queryString){
         console.error(err.message);
         throw err;
     }
-}
+};
